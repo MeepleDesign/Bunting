@@ -1209,7 +1209,7 @@ function setView(v){S.menu=false;
     if(GATED.includes(v)&&role!=='planner'){if(role==='supplier'){v='supplier'}else{S.login={role:'planner',mode:'signin',note:v==='workspace'?'Sign in to see your events.':v==='guests'?'Sign in to manage your guest list.':'Sign in to see your messages.',next:v};v='login'}}
     else if(v==='supplier'&&role!=='supplier'&&!S.viewAs){S.login={role:'supplier',mode:'signin',note:'Sign in to your supplier dashboard.',next:'supplier'};v='login'}
     else if(role==='supplier'&&v!=='supplier'&&v!=='home'&&v!=='search'&&v!=='admin'&&v!=='invite'){v='supplier'}}
-  if(S.viewAs&&v!=='supplier'&&v!=='search')exitViewAs();if(v!=='search')S.previewSup=null;if(S.view==='invite'&&v!=='invite'&&S.inv){S.event=S.inv.prev;S.myGuest=S.inv.prevGuest;S.inv=null}S.view=v;S.modal=null;S.confirming=false;S.bell=false;try{history.replaceState(null,'','#'+v)}catch(e){}render();saveAcct();window.scrollTo(0,0)}
+  if(S.viewAs&&v!=='supplier'&&v!=='search')exitViewAs();if(v!=='search')S.previewSup=null;if(S.view==='invite'&&v!=='invite'&&S.inv){S.event=S.inv.prev;S.myGuest=S.inv.prevGuest;S.inv=null}S.view=v;S.modal=null;S.confirming=false;S.bell=false;render();saveAcct();window.scrollTo(0,0)}
 document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.nav)));
 let tt;function toast(t){let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el)}el.innerHTML=I.check+' '+esc(t);clearTimeout(tt);tt=setTimeout(()=>el.remove(),2600)}
 function render(){if(S.event&&(S.user&&S.user.role==='planner'||S.view==='invite'))try{reconcileRefunds(S.event,S.inv?S.inv.acc:S.acctKey)}catch(e){}
@@ -3503,7 +3503,30 @@ app.addEventListener('click',e=>{const p=e.target.closest('[data-mpin]');if(p){S
 app.addEventListener('keydown',e=>{const p=e.target.closest&&e.target.closest('[data-mpin]');if(p&&(e.key==='Enter'||e.key===' ')){e.preventDefault();S.mapSel=p.dataset.mpin;render();const n=document.querySelector(`[data-mpin="${p.dataset.mpin}"]`);if(n)n.focus()}});
 document.addEventListener('click',e=>{if(S.bell&&!e.target.closest('.bellwrap')){S.bell=false;render()}});
 
-window.__dbg={S,setView,loadAccount,SUP,ACC,LIVE,SUPDATA};const hs=(location.hash||'').slice(1);featInit();initPayments();loadAccount('guest');setTimeout(liveStart,0);{const o={};for(const [p,v] of Object.entries(worldDocs()))o[p]=stable(v);LIVE.fixture=o;window.__fixture=o}if(['home','search'].includes(hs))S.view=hs;
+// ===== BACK BUTTON
+// Each screen (and each pop-up) gets its own browser history entry, so the phone's back button goes back one step.
+const NAV={list:[],i:0,skip:0,on:false};
+const narrowNav=()=>window.matchMedia('(max-width:780px)').matches;
+function navSnap(){return {v:S.view,st:S.supTab,at:S.admTab,gt:S.gTab,co:S.chatOpen,sco:S.sChatOpen,aco:S.aChatOpen,th:S.activeThread,sa:S.sActive,as:S.admSup,modal:S.modal,y:window.scrollY}}
+function navKey(n){const pk=[n.v,n.v==='supplier'?n.st:'',n.v==='admin'?n.at:'',n.v==='guests'?n.gt||'':'',narrowNav()&&n.v==='messages'&&n.co?n.th:'',narrowNav()&&n.v==='supplier'&&n.sco?n.sa:'',narrowNav()&&n.v==='admin'&&n.aco?n.as:''].join('|');
+  const m=n.modal;return pk+'#'+(m?m.type+':'+(m.id||m.sup||m.cat||m.idx||m.mth||m.evId||''):'')}
+function navSync(){if(!NAV.on)return;const cur=navSnap(),k=navKey(cur),here=NAV.list[NAV.i];if(!here){NAV.list=[{k,snap:cur}];NAV.i=0;return}
+  if(here.k===k){here.snap=cur;return}
+  const prev=NAV.list[NAV.i-1];
+  // Closing a pop-up (or going back to the screen before) steps back instead of adding a new entry.
+  if(prev&&prev.k===k){NAV.i--;prev.snap=cur;NAV.skip++;try{history.back()}catch(e){}return}
+  NAV.list=NAV.list.slice(0,NAV.i+1);here.snap.y=window.scrollY;NAV.list.push({k,snap:cur});NAV.i++;
+  try{history.pushState({bnav:NAV.i},'','#'+S.view)}catch(e){}}
+window.addEventListener('popstate',e=>{const i=e.state&&typeof e.state.bnav==='number'?e.state.bnav:0;
+  if(NAV.skip){NAV.skip--;return}
+  const n=NAV.list[i];if(!n)return;NAV.i=i;const x=n.snap;
+  S.view=x.v;S.supTab=x.st;S.admTab=x.at;S.gTab=x.gt;S.chatOpen=x.co;S.sChatOpen=x.sco;S.aChatOpen=x.aco;S.activeThread=x.th;S.sActive=x.sa;S.admSup=x.as;S.modal=x.modal||null;S.menu=false;S.bell=false;S.confirming=false;
+  NAV.on=false;try{render();renderModal()}finally{NAV.on=true}window.scrollTo(0,x.y||0)});
+{const _r=render,_rm=renderModal;render=function(){_r.apply(this,arguments);navSync()};renderModal=function(){_rm.apply(this,arguments);navSync()}}
+function navStart(){const cur=navSnap();NAV.list=[{k:navKey(cur),snap:cur}];NAV.i=0;try{history.replaceState({bnav:0},'','#'+S.view)}catch(e){}NAV.on=true}
+window.__dbg={S,setView,loadAccount,SUP,ACC,LIVE,SUPDATA,NAV};const hs=(location.hash||'').slice(1);featInit();initPayments();loadAccount('guest');setTimeout(liveStart,0);{const o={};for(const [p,v] of Object.entries(worldDocs()))o[p]=stable(v);LIVE.fixture=o;window.__fixture=o}if(['home','search'].includes(hs))S.view=hs;
 render();
+// History starts with the first tap, so loading and restoring the account doesn't add entries.
+{const go=()=>{if(!NAV.on)navStart();document.removeEventListener('pointerdown',go,true);document.removeEventListener('keydown',go,true)};document.addEventListener('pointerdown',go,true);document.addEventListener('keydown',go,true)}
 })();
 </script>
