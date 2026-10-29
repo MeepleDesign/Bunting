@@ -732,7 +732,12 @@ svg.map .venuepin circle{fill:var(--sun)}svg.map .venuepin text{font:800 11px va
 .pane-h{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
 .pane .msgs{max-height:460px;height:460px;overflow-y:auto;padding:16px 18px;align-content:start}
 .pane .send{padding:12px 18px;border-top:1px solid var(--line)}
-@media (max-width:780px){.chat{grid-template-columns:minmax(0,1fr)}.convs{border-right:0;border-bottom:1px solid var(--line);max-height:230px}.pane{min-height:0}.pane .msgs{height:360px}}
+.chatback{display:none}
+@media (max-width:780px){.chat{grid-template-columns:minmax(0,1fr);overflow:visible}.convs{border-right:0;max-height:none;overflow:visible}.convs .conv{padding:14px 16px}
+  .pane{min-height:0}.pane .msgs{height:auto;max-height:none;min-height:200px;overflow:visible}
+  .chat:not(.open) .pane{display:none}.chat.open .convs{display:none}
+  .chatback{display:inline-flex;margin-left:-6px}.pane-h{justify-content:flex-start}.pane-h>div{min-width:0}
+  .pane .send{position:sticky;bottom:0;background:var(--surface);z-index:3;border-radius:0 0 var(--r) var(--r)}}
 /* v3 additions: tabs, pricing studio, package choice, booking details */
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
 .tabbtn{border:0;background:none;padding:10px 14px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
@@ -1466,10 +1471,10 @@ function vMessages(){
   const convs=convList();if(!convs.length)return `<section class="sec-h"><div><h1>Messages</h1></div></section><section class="card stack"><h2>No messages yet</h2><p class="muted">When you book or message a supplier, your conversations appear here, one per booking.</p><button class="btn" data-go="search" style="justify-self:start">Find suppliers</button></section>`;if(!convs.find(c=>c.id===S.activeThread))S.activeThread=convs[0].id;
   const c=convs.find(x=>x.id===S.activeThread),s=SUP[c.id],th=S.threads[c.id]||[];S.readAt[c.id]=th.length;const q=c.line?lineQuote(c.line):null;
   return `<section class="sec-h"><div><span class="label">${esc(S.event.name)}</span><h1>Messages</h1></div></section>
-  <div class="chat">
+  <div class="chat${S.chatOpen?' open':''}">
     <aside class="convs" aria-label="Conversations"><span class="label">Your bookings</span>${convs.map(x=>{const xs=SUP[x.id];const xq=x.line?lineQuote(x.line):null;return `<button class="conv" data-chat="${x.id}" aria-current="${x.id===c.id}"><span class="th">${art(xs.cat,xs.seed,{noBunting:true})}</span><span style="min-width:0"><span class="row between" style="flex-wrap:nowrap"><b>${esc(xs.name)}</b>${x.last?`<span class="sub">${esc(x.last.t)}</span>`:''}</span><span class="sub">${CAT1[xs.cat]}${xq?' · '+esc(xq.p.name):' · not booked'}</span><div class="snip">${x.last?esc((x.last.from==='me'?'You: ':'')+x.last.text):'Start the conversation'}</div></span></button>`}).join('')}</aside>
     <section class="pane">
-      <div class="pane-h"><div><h3>${esc(s.name)}</h3><span class="sub">${q?`${CAT1[s.cat]} · ${esc(q.p.name)} · ${fmt(q.total)}`:CAT1[s.cat]} · replies in ${s.reply}</span></div>${c.line?`<button class="btn sm" data-booking="${c.line.cat}">View booking</button>`:`<button class="btn sm" data-open="${s.id}">View profile</button>`}</div>
+      <div class="pane-h"><button class="btn sm ghost chatback" data-chatback="p">‹ All messages</button><div><h3>${esc(s.name)}</h3><span class="sub">${q?`${CAT1[s.cat]} · ${esc(q.p.name)} · ${fmt(q.total)}`:CAT1[s.cat]} · replies in ${s.reply}</span></div>${c.line?`<button class="btn sm" data-booking="${c.line.cat}">View booking</button>`:`<button class="btn sm" data-open="${s.id}">View profile</button>`}</div>
       <div class="msgs" id="msgs">${msgHTML(th,m=>m.from==='me')||'<p class="muted small">No messages yet. Say hello.</p>'}</div>
       <form class="send" id="send"><input id="msgin" placeholder="Message ${esc(s.name)}" aria-label="Message"><button class="btn primary" type="submit">Send</button></form>
     </section>
@@ -1799,12 +1804,12 @@ function vSupMessages(bk){
   const last=k=>{const t=supThread(k).filter(m=>m.from!=='sys'&&m.from!=='ctx');return t[t.length-1]};
   const conv=(k,inner)=>`<button class="conv ${needsReply(k)?'unread':''}" data-schat="${k}" aria-current="${k===S.sActive}">${inner}</button>`;
   const lmB=last('bunting');const ctxB=S.supportCtx?bk.find(x=>x.key===S.supportCtx):null;
-  return `<div class="chat">
+  return `<div class="chat${S.sChatOpen?' open':''}">
     <aside class="convs" aria-label="Conversations">
       <span class="label">Help</span>${conv('bunting',`<span class="th" style="display:grid;place-items:center;background:var(--ink)"><svg width="26" height="20" viewBox="0 0 30 22"><path d="M1 3 Q15 9 29 3" stroke="#fff" stroke-width="1.6" fill="none"/><path d="M3 4 h7 l-3.5 9z" fill="#D6336C"/><path d="M11.5 6 h7 l-3.5 9z" fill="#F2B12E"/><path d="M20 4 h7 l-3.5 9z" fill="#4FC3BE"/></svg></span><span style="min-width:0"><span class="row between" style="flex-wrap:nowrap"><b>Bunting support</b>${needsReply('bunting')?'<span class="pill accent">New</span>':''}</span><span class="sub">Usually replies within a few hours</span><div class="snip">${lmB?esc((supMine('bunting')(lmB)?'You: ':'')+lmB.text):'Ask us anything'}</div></span>`)}
       <span class="label">Upcoming bookings</span>${bk.map(x=>{const lm=last(x.key);return conv(x.key,`<span class="th" style="display:grid;place-items:center;background:var(--sunk);font-weight:800;font-size:13px;line-height:1.1;text-align:center">${dfmt(x.date,{day:'numeric'})}<br><span class="sub" style="font-size:10.5px">${dfmt(x.date,{month:'short'})}</span></span><span style="min-width:0"><span class="row between" style="flex-wrap:nowrap"><b>${esc(x.name)}</b>${needsReply(x.key)?'<span class="pill accent">Reply</span>':x.src==='own'?'<span class="pill neutral" style="font-size:10.5px">Own</span>':''}</span><span class="sub">${esc(x.who)} · ${x.guests} guests</span><div class="snip">${lm?esc((supMine(x.key)(lm)?'You: ':'')+lm.text):'No messages yet'}</div></span>`)}).join('')}</aside>
     <section class="pane">
-      <div class="pane-h">${isB?`<div><h3>Bunting support</h3><span class="sub">Bookings, payouts, your profile or anything else</span></div>`:`<div><h3>${esc(b.name)}</h3><span class="sub">${esc(b.who)} · ${dfmt(b.date,{weekday:'short',day:'numeric',month:'short'})} · ${esc(b.q.p.name)} · ${fmt(b.q.total)}</span></div><div class="row"><button class="btn sm" data-supporthelp="${b.key}">Ask Bunting about this</button><button class="btn sm" data-sbook="${b.key}">View booking</button></div>`}</div>
+      <div class="pane-h"><button class="btn sm ghost chatback" data-chatback="s">‹ All messages</button>${isB?`<div><h3>Bunting support</h3><span class="sub">Bookings, payouts, your profile or anything else</span></div>`:`<div><h3>${esc(b.name)}</h3><span class="sub">${esc(b.who)} · ${dfmt(b.date,{weekday:'short',day:'numeric',month:'short'})} · ${esc(b.q.p.name)} · ${fmt(b.q.total)}</span></div><div class="row"><button class="btn sm" data-supporthelp="${b.key}">Ask Bunting about this</button><button class="btn sm" data-sbook="${b.key}">View booking</button></div>`}</div>
       <div class="msgs" id="smsgs">${supMsgHTML(S.sActive,th)||'<p class="muted small">No messages yet.</p>'}</div>
       <form class="send" id="sreply" style="flex-wrap:wrap">${isB&&ctxB?`<div class="attach">${ctxCard(ctxB)}<button type="button" class="xbtn" data-ctxclear aria-label="Remove attached booking">×</button></div>`:''}<input id="sreplyin" placeholder="${isB?(ctxB?'What do you need help with on this booking?':'Message Bunting support'):'Message '+esc(b.who.split(' ')[0])}" aria-label="Message"><button class="btn primary" type="submit">Send</button></form>
     </section></div>`;
@@ -1958,7 +1963,7 @@ app.addEventListener('click',e=>{
   if(t.dataset.unblock){const s=SUP[S.supplierAs];s.blocks=s.blocks.filter(b=>b.id!==t.dataset.unblock);toast('Dates unblocked');render();return}
   if(t.hasAttribute('data-calsync')){toast('Calendar sync would open Google or Apple sign-in here');return}
   if(t.dataset.calday){const d=t.dataset.calday,sel=S.calSel;if(!sel||sel.to||d<sel.from)S.calSel={from:d,to:null};else S.calSel={from:sel.from,to:d};render();return}
-  if(t.dataset.supporthelp){S.supportCtx=t.dataset.supporthelp;S.sActive='bunting';S.supTab='messages';S.modal=null;render();const i=document.getElementById('sreplyin');if(i)i.focus();return}
+  if(t.dataset.supporthelp){S.supportCtx=t.dataset.supporthelp;S.sActive='bunting';S.sChatOpen=true;S.supTab='messages';S.modal=null;render();const i=document.getElementById('sreplyin');if(i)i.focus();return}
   if(t.hasAttribute('data-ctxclear')){S.supportCtx=null;render();return}
   if(t.dataset.reqaccept){const r=S.requests.find(x=>x.id===t.dataset.reqaccept);S.others.push({name:r.name,who:r.who,date:r.date,guests:r.guests,pkg:r.pkg,addons:[]});S.requests=S.requests.filter(x=>x!==r);toast('Accepted. '+r.who+' has been notified and asked for the deposit');render();return}
   if(t.dataset.reqdecline){const r=S.requests.find(x=>x.id===t.dataset.reqdecline);S.requests=S.requests.filter(x=>x!==r);toast('Declined. Bunting will suggest other suppliers to '+r.who);render();return}
@@ -1966,8 +1971,9 @@ app.addEventListener('click',e=>{
   if(t.dataset.mkrule){const r=S.requests.find(x=>x.id===t.dataset.mkrule);const p=pkgOf(SUP[S.supplierAs],r.pkg);p.ext={on:true,upto:Math.max(p.max+1,Number(document.getElementById('ru-'+r.id).value)||r.guests),fee:r.extra,label:document.getElementById('rl-'+r.id).value||'Large event'};r.rule='made';toast('Rule created. Bigger parties can now book instantly');render();return}
   if(t.dataset.norule){const r=S.requests.find(x=>x.id===t.dataset.norule);r.rule='no';render();return}
   if(t.dataset.requndo){const r=S.requests.find(x=>x.id===t.dataset.requndo);r.status='new';render();return}
-  if(t.dataset.chat){S.activeThread=t.dataset.chat;if(S.view!=='messages')setView('messages');else render();const m=document.getElementById('msgs');if(m)m.scrollTop=m.scrollHeight;return}
-  if(t.dataset.schat){S.sActive=t.dataset.schat;S.supTab='messages';render();const m=document.getElementById('smsgs');if(m)m.scrollTop=m.scrollHeight;return}
+  if(t.dataset.chat){S.activeThread=t.dataset.chat;S.chatOpen=true;if(S.view!=='messages')setView('messages');else render();chatToEnd('msgs');return}
+  if(t.dataset.chatback){if(t.dataset.chatback==='s')S.sChatOpen=false;else S.chatOpen=false;render();const c=document.querySelector('.chat');if(c&&isNarrow())c.scrollIntoView({block:'start'});return}
+  if(t.dataset.schat){S.sActive=t.dataset.schat;S.sChatOpen=true;S.supTab='messages';render();chatToEnd('smsgs');return}
   if(t.id==='invite'){S.modal={type:'cohost'};renderModal();setTimeout(()=>refocus('ch-name'),30);return}
   if(t.id==='copylink'){const link='bunting.party/i/sams-40th';try{navigator.clipboard.writeText(link).then(()=>toast('Invite link copied'),()=>toast('Link: '+link))}catch(err){toast('Link: '+link)}return}
   if(t.dataset.cat){S.search.cat=t.dataset.cat;S.search.shortOnly=false;render();return}
@@ -2088,8 +2094,8 @@ overlay.addEventListener('click',e=>{
 
   if(t.dataset.pick!==undefined&&t.tagName==='BUTTON'){keepScroll(()=>{const p=pkgOf(SUP[S.modal.id],S.sel.pkg);togglePick(p,S.sel.choices,Number(t.dataset.pick),t.dataset.opt);S.confirming=false;renderModal()});return}
   if(t.dataset.bpick!==undefined){const l=S.lines.find(x=>x.cat===S.modal.cat);const p=pkgOf(SUP[l.booking.sup],l.booking.pkg);keepScroll(()=>{togglePick(p,l.booking.choices,Number(t.dataset.bpick),t.dataset.opt);renderModal()});return}
-  if(t.dataset.schat){S.sActive=t.dataset.schat;S.supTab='messages';S.modal=null;render();return}
-  if(t.dataset.supporthelp){S.supportCtx=t.dataset.supporthelp;S.sActive='bunting';S.supTab='messages';S.modal=null;render();const i=document.getElementById('sreplyin');if(i)i.focus();return}
+  if(t.dataset.schat){S.sActive=t.dataset.schat;S.sChatOpen=true;S.supTab='messages';S.modal=null;render();chatToEnd('smsgs');return}
+  if(t.dataset.supporthelp){S.supportCtx=t.dataset.supporthelp;S.sActive='bunting';S.sChatOpen=true;S.supTab='messages';S.modal=null;render();const i=document.getElementById('sreplyin');if(i)i.focus();return}
   if(t.hasAttribute('data-newevent')){S.modal={type:'event',mode:'new',pre:{date:S.search.date,guests:S.search.guests}};renderModal();return}
   if(t.dataset.bookfor){const g=S.search.guests;switchEvent(t.dataset.bookfor);keepScroll(()=>{render()});toast('Now planning '+S.event.name);return}
   if(t.hasAttribute('data-ctxreset')){S.search.date=null;keepScroll(()=>render());return}
@@ -2990,6 +2996,8 @@ app.addEventListener('change',e=>{const t=e.target;
   if(t.hasAttribute('data-obdecl')&&S.ob){S.ob.licDecl=t.checked;return}
   if(t.dataset.insreq){if(!isAdmin()){render();return}const c=new Set(insReqCats());if(t.checked)c.add(t.dataset.insreq);else c.delete(t.dataset.insreq);SETTINGS.insReq=[...c];toast(t.checked?`Insurance now required for ${CAT1[t.dataset.insreq].toLowerCase()}`:`Insurance now optional for ${CAT1[t.dataset.insreq].toLowerCase()}`);render();return}
   if(t.hasAttribute('data-hygcad')){if(!isAdmin()){render();return}SETTINGS.hygCad=t.value;toast('Hygiene ratings will be checked '+HYG_CAD[t.value]);render();return}});
+// Messages on phones: the list and the conversation are separate screens, and the page scrolls (no boxes inside boxes).
+function chatToEnd(id){const m=document.getElementById(id);if(!m)return;if(window.matchMedia('(max-width:780px)').matches){const c=m.closest('.pane');if(c)setTimeout(()=>{const f=c.querySelector('.send');(f||c).scrollIntoView({block:'end'})},0)}else m.scrollTop=m.scrollHeight}
 function tourLS(v){try{if(v===undefined)return JSON.parse(localStorage.getItem('bunting.tour')||'null');localStorage.setItem('bunting.tour',JSON.stringify(v))}catch(e){return null}}
 function tourGo(){const t=S.tour,T=TOURS[t.role];if(t.step>=T.steps.length)return;if(T.acct&&S.acctKey!==T.acct&&ACC[T.acct]){loadAccount(T.acct)}T.steps[t.step][2]()}
 function tourHTML(){const t=S.tour;if(!t){if(S.tourOffer)return `<div class="tourcard"><div class="row between"><b>${tourLS()&&tourLS().seen?'Take the tour':'New here? Take a 2-minute tour'}</b><button class="btn ghost sm" data-tourdismiss aria-label="Close">✕</button></div><p class="small muted">Pick a side to see. The tour uses demo accounts, so nothing you do affects your own data.</p><div class="row" style="gap:6px">${tourList().map(([k,v])=>`<button class="btn sm" data-tourstart="${k}">${v.name}</button>`).join('')}</div></div>`;return ''}
