@@ -1385,7 +1385,7 @@ function vHome(){
     <div class="card step"><span class="n">1</span><h3 style="margin-top:8px">Set up your party</h3><p class="muted small" style="margin-top:4px">Add the date, a rough guest count and a budget for each part of the night.</p></div>
     <div class="card step"><span class="n">2</span><h3 style="margin-top:8px">Book within budget</h3><p class="muted small" style="margin-top:4px">Search straight from a budget line, pick a package and book instantly with a deposit.</p></div>
     <div class="card step"><span class="n">3</span><h3 style="margin-top:8px">Invite and relax</h3><p class="muted small" style="margin-top:4px">Share one invite link. RSVPs, dietary needs and payments flow to your suppliers.</p></div></div></section>
-  <section class="supbanner"><div><h2 style="color:inherit">Run your events business on Bunting</h2><p class="muted" style="margin-top:6px">Listing, bookings, pricing, calendar and payments are free. You only pay a fee on bookings Bunting sends you. Bunting Pro (coming soon, £19 a month) adds tools for your own clients and team: card payments, quotes, invoices and contracts, team accounts, insights, and automatic reminders and review requests.</p></div><div class="row" style="gap:8px"><button class="btn lg" data-go="onboard">List your business</button><button class="btn lg ghost" data-supgo="1" style="color:inherit;background:transparent;border-color:color-mix(in srgb,var(--bg) 40%,transparent)">See a demo dashboard</button></div></section>`;
+  <section class="supbanner"><div><h2 style="color:inherit">Run your events business on Bunting</h2><p class="muted" style="margin-top:6px">Listing, bookings, pricing, calendar and payments are free. You only pay a fee on bookings Bunting sends you. Bunting Pro (coming soon, free for your first 6 months, then £9 a month) adds tools for your own clients and team: card payments, quotes, invoices and contracts, team accounts, insights, and automatic reminders and review requests.</p></div><div class="row" style="gap:8px"><button class="btn lg" data-go="onboard">List your business</button><button class="btn lg ghost" data-supgo="1" style="color:inherit;background:transparent;border-color:color-mix(in srgb,var(--bg) 40%,transparent)">See a demo dashboard</button></div></section>`;
 }
 
 // WORKSPACE
@@ -2132,7 +2132,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.modal){S.modal=nu
 // ===== LIVE SHARED DATA
 const LIVE={on:false,db:null,user:null,readonly:false,paused:false,empty:false,last:{},queue:{},timer:null,pending:false,rr:null,fixture:null,started:false};
 const ME={id:null,name:'',isOwner:false};
-const IMG={};let SETTINGS={commission:8,buntingVat:false,vatNo:'',company:'Bunting Events Ltd',address:'1 Example Street, Brighton BN1 1AA'};let NOTIFS=[];
+const IMG={};let SETTINGS={commission:5,buntingVat:false,vatNo:'',company:'Bunting Events Ltd',address:'1 Example Street, Brighton BN1 1AA'};let NOTIFS=[];
 const clone=o=>JSON.parse(JSON.stringify(o));
 function stable(v){if(v===undefined||typeof v==='function')return 'null';if(v===null||typeof v!=='object')return JSON.stringify(v);if(v instanceof Set)return stable([...v]);if(Array.isArray(v))return '['+v.map(stable).join(',')+']';return '{'+Object.keys(v).filter(k=>v[k]!==undefined&&typeof v[k]!=='function').sort().map(k=>JSON.stringify(k)+':'+stable(v[k])).join(',')+'}'}
 function nowLabel(){const d=new Date();return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+', '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}

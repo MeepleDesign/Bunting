@@ -92,10 +92,11 @@ Tony is an indirect tax professional (VAT, compliance), not a developer. Explain
 
 ## Decisions so far (details in the Decisions doc and the spec)
 
-- **Fees:**
-  - Commission: 8% working figure, set after testing.
-  - Founding suppliers: 0% on their first 3 bookings, then 5% for 12 months.
-  - Pro: £19 a month or £190 a year, free during testing.
+- **Fees:** reduced 6 November to help suppliers adopt Bunting and come to rely on it early.
+  - Commission: 5% working figure (was 8%), set after testing.
+  - Founding suppliers: 0% on their first 3 bookings, then 3% for 12 months (was 5%).
+  - Pro: free for suppliers' first 6 months after real launch, then £9 a month or £90 a year (was £19/£190). Still free for everyone while Bunting is in testing.
+  - Pro grouping (which features are free vs Pro-only) and the 0.5% Bunting margin on Pro suppliers' own-client card payments: approved as proposed 27 October.
   - No booking fee for planners. An optional planner premium comes later.
   - Featured placement comes later, as a separate add-on.
 - **Payments:** Stripe Connect direct charges. The supplier is the merchant of record and Bunting acts as a disclosed commercial agent. Bunting never holds money.
@@ -118,7 +119,6 @@ Tony is an indirect tax professional (VAT, compliance), not a developer. Explain
 - The demo is hosted and ready for testers. The testing script exists.
 - **Waiting on Tony:**
   - Supabase redirect URL and SMTP.
-  - Approving the Pro grouping and the 0.5% Pro booking-page rate.
   - Commission on appointment fees.
   - Checking his KAYAK employment contract (IP and outside work) before announcing anything.
 - **Next big piece, the live MVP (spec section 15):**
