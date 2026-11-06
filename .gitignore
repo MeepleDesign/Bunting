@@ -5,3 +5,4 @@ node_modules
 public/bunting.html
 public/runtime.js
 tests/output*
+tests/prototype/work

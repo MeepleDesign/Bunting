@@ -13,6 +13,8 @@ A party planning marketplace for Brighton & Hove. This repo is the **hosted demo
 | `app/members` | Owner-only page to choose who can save changes. |
 | `supabase/migrations` | Tables and access rules. |
 | `tests/smoke.mjs` | Runs the demo against an in-browser fake of Supabase and checks the access rules. |
+| `tests/prototype/` | 21 regression scripts for every flow in the prototype (`bash tests/prototype/run_all.sh`). |
+| `CLAUDE.md` | Background, decisions and working notes for Claude Code sessions. |
 
 **Hosting:** Next.js on Vercel. **Data:** Supabase (tables prefixed `bunting_` in the MeepleDesign project).
 

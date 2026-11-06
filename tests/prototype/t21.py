@@ -1,0 +1,91 @@
+import asyncio, pathlib, json
+from playwright.async_api import async_playwright
+D=pathlib.Path.cwd()
+html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>'+(D/'fete-prototype.html').read_text()+'</body></html>'
+(D/'live.html').write_text(html)
+FAKE=(D/'fake.js').read_text()
+URL='file://'+str((D/'live.html').resolve())
+async def mk(ctx,uid,owner=False,W=1280):
+  pg=await ctx.new_page(); await pg.set_viewport_size({'width':W,'height':1000}); pg.set_default_timeout(6000)
+  await pg.add_init_script("try{localStorage.setItem('bunting.tour','{\"seen\":true}')}catch(e){}")
+  await pg.add_init_script(f"window.__uid={json.dumps(uid)};window.__owner={'true' if owner else 'false'};"+FAKE)
+  pg.errs=[]; pg.on('pageerror',lambda e:pg.errs.append(str(e)))
+  return pg
+async def st(pg,n,c):
+  try: await c; print('ok',n)
+  except Exception as e: print('FAIL',n,str(e)[:200])
+async def main():
+  async with async_playwright() as p:
+    b=await p.chromium.launch(); ctx=await b.new_context()
+    A=await mk(ctx,'u_owner',True)
+    await A.goto(URL); await A.evaluate("localStorage.clear()"); await A.reload(); await A.wait_for_timeout(600)
+    print('empty banner', await A.locator('[data-loaddemo]').count(), 'footer', (await A.locator('footer').inner_text())[:40])
+    await st(A,'load demo', A.click('[data-loaddemo]')); await A.wait_for_timeout(800)
+    n=await A.evaluate("Object.keys(JSON.parse(localStorage.getItem('fakedb'))).length"); print('docs in db',n)
+    print('footer', (await A.locator('footer').inner_text())[:30])
+    await st(A,'to login', A.evaluate("__dbg.setView('login')"))
+    print('me card', await A.locator('[data-realme]').inner_text())
+    await st(A,'realme', A.click('[data-realme]'))
+    print('welcome', await A.locator('main h1').first.inner_text())
+    await st(A,'create', A.click('.welcome [data-newevent]')); await A.fill('#ev-name',"Tony's real party"); await A.fill('#ev-date','2027-07-17'); await st(A,'save', A.click('#eventform button[type=submit]'))
+    await A.wait_for_timeout(600)
+    print('db before B', await A.evaluate("Object.keys(JSON.parse(localStorage.getItem('fakedb'))).filter(k=>k.startsWith('suppliers')).length"), A.errs)
+    B=await mk(ctx,'u_sophie')
+    await B.goto(URL); await B.wait_for_timeout(700)
+    for _ in range(10):
+      if await B.evaluate("!!localStorage.getItem('fakedb')"): break
+      await B.wait_for_timeout(300); await B.reload(); await B.wait_for_timeout(700)
+    print('B state', await B.evaluate("JSON.stringify({sup:Object.keys(JSON.parse(localStorage.getItem('fakedb'))).filter(k=>k.startsWith('suppliers')).length,empty:__dbg.LIVE.empty,on:__dbg.LIVE.on,paused:__dbg.LIVE.paused,n:Object.keys(__dbg.SUP).length})"), B.errs)
+    print('B footer', (await B.locator('footer').inner_text())[:30])
+    await st(B,'login', B.evaluate("__dbg.setView('login')")); await st(B,'sup tab', B.click('[data-lrole="supplier"]'))
+    print('B me', await B.locator('[data-realme]').inner_text())
+    await st(B,'realme', B.click('[data-realme]'))
+    await B.fill('#ob-name','Hove Hot Dogs'); await st(B,'build', B.click('#obform1 button[type=submit]')); await B.wait_for_timeout(2600)
+    for i in range(2): await st(B,'next', B.click('button.primary[data-obnext]'))
+    await st(B,'ins', B.set_input_files('#ob-ins',str(D/'pic.png'))); await st(B,'next', B.click('button.primary[data-obnext]'))
+    await st(B,'stripe', B.click('[data-obstripe]')); await st(B,'next', B.click('button.primary[data-obnext]'))
+    await st(B,'live', B.click('[data-oblive]')); await B.wait_for_timeout(900)
+    print('B dash', await B.locator('main h1').first.inner_text())
+    # A approves B's insurance in admin
+    await A.wait_for_timeout(500); await st(A,'admin', A.evaluate("__dbg.setView('admin')")); await st(A,'sups', A.click('.ditem[data-atab="suppliers"]')); await st(A,'review', A.click('[data-afilter="review"]'))
+    await st(A,'open hhd', A.click('tr[data-aopen]:has-text("Hove Hot Dogs")')); await st(A,'approve', A.click('.onbpanel [data-approve$="|ins"]')); await A.wait_for_timeout(500)
+    # A books B
+    await st(A,'search', A.evaluate("__dbg.setView('search')")); await st(A,'cat', A.click('[data-cat="catering"]'))
+    print('A sees new sup', await A.locator('.sup:has-text("Hove Hot Dogs")').count())
+    await st(A,'open', A.click('.sup:has-text("Hove Hot Dogs")'))
+    await st(A,'confirm', A.click('[data-confirm]')); await st(A,'book', A.click('[data-book]')); await A.wait_for_timeout(900)
+    # B sees booking
+    await st(B,'bookings', B.evaluate("__dbg.S.supTab='bookings';__dbg.setView('supplier')")); await B.wait_for_timeout(300)
+    print('B bookings rows', await B.locator('tr.click').count(), (await B.locator('tr.click').first.inner_text()).replace('\n',' | ')[:90])
+    await st(B,'open bk', B.click('tr.click >> nth=0')); await st(B,'msg', B.click('.modal [data-schat]'))
+    await B.fill('#sreplyin','Hi Tony, looking forward to it!'); await B.press('#sreplyin','Enter'); await B.wait_for_timeout(900)
+    await st(A,'messages', A.click('.nav [data-nav="messages"]')); await A.wait_for_timeout(300)
+    print('A thread last', (await A.locator('#msgs .msg').last.inner_text())[:60])
+    # persistence
+    await A.reload(); await A.wait_for_timeout(900)
+    print('after reload view', await A.locator('main h1').first.inner_text())
+    print('A event after reload', await A.locator('.cover h1').inner_text() if await A.locator('.cover h1').count() else 'NO COVER')
+    # notifications on B
+    await B.wait_for_timeout(400); await st(B,'B bell', B.click('[data-bell]'))
+    print('B notifs', (await B.locator('.npanel').inner_text()).replace('\n',' | ')[:300])
+    await st(B,'close bell', B.click('[data-bell]'))
+    # B messages Bunting support
+    await st(B,'msgs tab', B.evaluate("__dbg.S.supTab='messages';__dbg.setView('supplier')")); await st(B,'bunting conv', B.click('[data-schat="bunting"] >> nth=0'))
+    await B.fill('#sreplyin','Hi, can you check my documents?'); await B.press('#sreplyin','Enter'); await B.wait_for_timeout(900)
+    # A admin
+    await st(A,'admin2', A.evaluate("__dbg.setView('admin')")); await A.wait_for_timeout(200)
+    print('A admin attention', (await A.locator('section:has(h2:has-text("Needs attention"))').inner_text()).replace('\n',' | '))
+    await st(A,'sup tab', A.click('.ditem[data-atab="suppliers"]'))
+    print('A docs to check', (await A.locator('.docrow').all_inner_texts()))
+    n=await A.locator('[data-approve^="s"]').count(); print('B docs', n)
+    for i in range(n): await st(A,'approve', A.click('[data-approve^="s"] >> nth=0')); await A.wait_for_timeout(300)
+    await st(A,'support', A.click('.ditem[data-atab="support"]')); await A.fill('#areplyin','All approved, welcome to Bunting!'); await A.press('#areplyin','Enter'); await A.wait_for_timeout(900)
+    await st(B,'B bell2', B.click('[data-bell]')); print('B notifs2', (await B.locator('.npanel').inner_text()).replace('\n',' | ')[:300])
+    await st(B,'B close', B.click('[data-bell]'))
+    await st(B,'B overview', B.evaluate("__dbg.S.supTab='overview';__dbg.setView('supplier')"))
+    print('B last support msg', await B.evaluate("JSON.stringify(Object.keys(JSON.parse(localStorage.getItem('fakedb'))).filter(k=>k.startsWith('threads/support')).length)"))
+    await B.reload(); await B.wait_for_timeout(900); print('B after reload', await B.locator('main h1').first.inner_text())
+    await st(B,'pay tab', B.evaluate("__dbg.S.supTab='money';__dbg.setView('supplier')")); print('B pay rows', await B.locator('main table tbody tr').count())
+    print('errs A',A.errs,'B',B.errs)
+    await b.close()
+asyncio.run(main())

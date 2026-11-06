@@ -1,0 +1,45 @@
+import asyncio, pathlib
+from playwright.async_api import async_playwright
+html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>'+pathlib.Path('fete-prototype.html').read_text()+'</body></html>'
+pathlib.Path('test.html').write_text(html)
+async def main():
+  async with async_playwright() as p:
+    b=await p.chromium.launch()
+    for W in (1280,390):
+      pg=await b.new_page(viewport={'width':W,'height':1000}); await pg.add_init_script("try{localStorage.setItem('bunting.tour','{\"seen\":true}')}catch(e){}"); await pg.add_init_script("window.__openAll=1"); errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
+      await pg.goto('file://'+str(pathlib.Path('test.html').resolve()))
+      async def st(n,c):
+        try: await c; print(W,'ok',n)
+        except Exception as e: print(W,'FAIL',n,str(e)[:160])
+      await st('supplier tab', pg.click('[data-lrole="supplier"]'))
+      await st('signup', pg.click('[data-lmode="signup"]'))
+      await pg.fill('#lg-name','Kemptown Kitchen'); await pg.fill('#lg-web','kemptownkitchen.co.uk'); await pg.fill('#lg-email','hi@kk.example'); await pg.fill('#lg-pass','x')
+      await st('create', pg.click('#loginform button[type=submit]'))
+      print(W,'onboard name prefilled', await pg.input_value('#ob-name'))
+      await st('build', pg.click('#obform1 button[type=submit]')); await pg.wait_for_timeout(2600)
+      if W==1280: await pg.screenshot(path='ob2.png',full_page=True)
+      print(W,'blurb', (await pg.input_value('#ob-blurb'))[:60])
+      await st('tag', pg.click('[data-obtag] >> nth=2'))
+      await st('photo', pg.set_input_files('#ob-files','test.png')); await pg.wait_for_timeout(400)
+      await st('next', pg.click('[data-obnext]'))
+      await st('price', pg.fill('[data-obpk="1.perHead"]','21')); await pg.locator('[data-obpk="1.perHead"]').dispatch_event('change')
+      if W==1280: await pg.screenshot(path='ob3.png',full_page=True)
+      await st('next2', pg.click('[data-obnext] >> nth=-1'))
+      await st('ins', pg.set_input_files('#ob-ins','test.png')); await st('hyg', pg.select_option('#ob-hyg','5'))
+      await st('next3', pg.click('button.primary[data-obnext]'))
+      await st('stripe', pg.click('[data-obstripe]'))
+      await st('next4', pg.click('button.primary[data-obnext]'))
+      if W==1280: await pg.screenshot(path='ob6.png',full_page=True)
+      await st('live', pg.click('[data-oblive]'))
+      print(W,'dash h1', await pg.locator('main h1').first.inner_text())
+      for tab in ['bookings','calendar','requests','messages','reviews','pricing','profile','docs','settings','money','overview']:
+        await st('tab '+tab, pg.evaluate(f"__dbg.S.supTab='{tab}';__dbg.setView('supplier')"))
+      await pg.wait_for_timeout(5600)
+      await st('menu', pg.click('[data-menu]')); await st('see as customer', pg.click('[data-nav2="search"]'))
+      await st('cat', pg.click('[data-cat="catering"]'))
+      print(W,'new in search', await pg.locator('.sup:has-text("Kemptown Kitchen")').count())
+      await st('open', pg.click('.sup:has-text("Kemptown Kitchen")'))
+      print(W,'badges', await pg.locator('.modal .pill:has-text("checking")').count())
+      sw=await pg.evaluate('document.documentElement.scrollWidth'); print(W,'sw',sw,'errs',errs); await pg.close()
+    await b.close()
+asyncio.run(main())
