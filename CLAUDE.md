@@ -120,7 +120,7 @@ Tony is an indirect tax professional (VAT, compliance), not a developer. Explain
 - The demo is hosted and ready for testers. The testing script exists.
 - **Waiting on Tony:**
   - Supabase redirect URL and SMTP.
-  - Checking his KAYAK employment contract (IP and outside work) before announcing anything.
+  - Checking his KAYAK employment contract (IP and outside work) before announcing anything. Not urgent — Tony's leaving this until closer to a public announcement (6 November 2026).
 - **Next big piece, the live MVP (spec section 15):**
   - Rebuild on proper tables (suppliers, packages, events, bookings, payments), with prices and bookings worked out on the server and per-user access rules.
   - Keep the tested screens.
