@@ -109,6 +109,7 @@ Tony is an indirect tax professional (VAT, compliance), not a developer. Explain
   - The food hygiene (FSA) rating is checked automatically on a schedule.
 - **Appointments:**
   - Any supplier can offer viewings, tastings or chats: in person, at the customer's, by video or by phone. They can be free or charged, per appointment or per person, with the fee optionally taken off the booking.
+  - No Bunting commission on appointment fees: suppliers keep the fee in full, whether or not it later becomes a booking. (Decided 6 November 2026.)
   - Cancelling is free up to 48 hours before.
   - Planners can ask any supplier for a time.
   - Suppliers can offer times from requests and bookings.
@@ -119,7 +120,6 @@ Tony is an indirect tax professional (VAT, compliance), not a developer. Explain
 - The demo is hosted and ready for testers. The testing script exists.
 - **Waiting on Tony:**
   - Supabase redirect URL and SMTP.
-  - Commission on appointment fees.
   - Checking his KAYAK employment contract (IP and outside work) before announcing anything.
 - **Next big piece, the live MVP (spec section 15):**
   - Rebuild on proper tables (suppliers, packages, events, bookings, payments), with prices and bookings worked out on the server and per-user access rules.
